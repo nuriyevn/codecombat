@@ -159,8 +159,13 @@ module.exports = class PlayItemsModal extends ModalView
     @updateViewVisibleTimer()
 
   currentVisiblePremiumFeature: ->
-    if 'pet' in (@itemDetailsView?.item?.getAllowedSlots() or [])
-      return @.id + " view-pet"
+    item = @itemDetailsView?.item
+    if 'pet' in (item?.getAllowedSlots() or [])
+      return @.id + " view-pet " + item.get('slug')
+    else if item?.get('heroClass') is 'Ranger'
+      return @.id + " item-ranger " + item.get('slug')
+    else if item?.get('heroClass') is 'Wizard'
+      return @.id + " item-wizard " + item.get('slug')
     else if @$el.find('.tab-content').hasClass('filter-wizard')
       return @.id + " filter-wizard"
     else if @$el.find('.tab-content').hasClass('filter-ranger')
@@ -168,16 +173,6 @@ module.exports = class PlayItemsModal extends ModalView
     else
       return null
   
-  # Track premium feature viewing time
-  updateViewVisibleTimer: ->
-    @viewVisibleTimer.stopTimer({ clearName: true })
-    if 'pet' in (@itemDetailsView?.item?.getAllowedSlots() or [])
-      @viewVisibleTimer.startTimer(@.id + " view-pet")
-    else if @$el.find('.tab-content').hasClass('filter-wizard')
-      @viewVisibleTimer.startTimer(@.id + " filter-wizard")
-    else if @$el.find('.tab-content').hasClass('filter-ranger')
-      @viewVisibleTimer.startTimer(@.id + " filter-ranger")
-
   onTabClicked: (e) ->
     @playSound 'game-menu-tab-switch'
     nano = $($(e.target).attr('href')).find('.nano')
