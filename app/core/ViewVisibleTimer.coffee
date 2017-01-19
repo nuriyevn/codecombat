@@ -28,14 +28,16 @@ class ViewVisibleTimer extends CocoClass
     #   in the timer
     @awayTimeoutLimit = 5 * 1000
     @awayTimeoutId = null
+    @throttleRate = 50
     super()
 
   startTimer: (@viewName) ->
     if not @viewName
       throw new Error('No view name!')
-    if @running and window.performance.now() - @startTime > 50
+    if @running and window.performance.now() - @startTime > @throttleRate
       throw(new Error('Starting a timer over another one!'))
-    if not @running
+    console.log window.performance.now() - @startTime, @throttleRate
+    if not @running and (not @startTime or window.performance.now() - @startTime > @throttleRate)
       # console.log "Start timer!", @viewName
       # console.trace()
       @running = true
@@ -49,7 +51,8 @@ class ViewVisibleTimer extends CocoClass
       @running = false
       @endTime = if subtractTimeout then @lastActive else window.performance.now()
       timeViewed = @endTime - @startTime
-      window.tracker.trackEvent 'Premium Feature Viewed', { @viewName, timeViewed }
+      if timeViewed > @throttleRate # Prevent event spam when triggered in rapid succession
+        window.tracker.trackEvent 'Premium Feature Viewed', { @viewName, timeViewed }
     @viewName = null if clearName
     
   markLastActive: ->

@@ -37,7 +37,7 @@ module.exports = class PlayHeroesModal extends ModalView
     @confirmButtonI18N = options.confirmButtonI18N ? "common.save"
     @heroes = new CocoCollection([], {model: ThangType})
     @heroes.url = '/db/thang.type?view=heroes'
-    @heroes.setProjection ['original','name','slug','soundTriggers','featureImages','gems','heroClass','description','components','extendedName','unlockLevelName','i18n','poseImage']
+    @heroes.setProjection ['original','name','slug','soundTriggers','featureImages','gems','heroClass','description','components','extendedName','unlockLevelName','i18n','poseImage','tier']
     @heroes.comparator = 'gems'
     @listenToOnce @heroes, 'sync', @onHeroesLoaded
     @supermodel.loadCollection(@heroes, 'heroes')
@@ -46,6 +46,7 @@ module.exports = class PlayHeroesModal extends ModalView
     @session = options.session
     @initCodeLanguageList options.hadEverChosenHero
     @heroAnimationInterval = setInterval @animateHeroes, 1000
+    @trackTimeVisible()
 
   onHeroesLoaded: ->
     @formatHero hero for hero in @heroes.models
@@ -62,6 +63,22 @@ module.exports = class PlayHeroesModal extends ModalView
       hero.restricted = not (hero.get('original') in allowedHeroes)
     hero.class = (hero.get('heroClass') or 'warrior').toLowerCase()
     hero.stats = hero.getHeroStats()
+    
+  currentVisiblePremiumFeature: ->
+    isPremium = not (@visibleHero.class is 'warrior' and @visibleHero.get('tier') is 0)
+    if isPremium
+      return @.id + " premium-hero #{@visibleHero.get('slug')}"
+    else
+      return undefined
+    
+  updateViewVisibleTimer: ->
+    feature = @currentVisiblePremiumFeature()
+    if feature and feature isnt @viewVisibleTimer.viewName
+      @viewVisibleTimer.stopTimer({ clearName: true })
+      console.log "Starting timer"
+      @viewVisibleTimer.startTimer(feature)
+    else if not feature
+      @viewVisibleTimer.stopTimer({ clearName: true })
 
   getRenderData: (context={}) ->
     context = super(context)
@@ -74,6 +91,10 @@ module.exports = class PlayHeroesModal extends ModalView
     context.gems = me.gems()
     context.isIE = @isIE()
     context
+  
+  afterInsert: ->
+    @updateViewVisibleTimer()
+    super()
 
   afterRender: ->
     super()
@@ -139,6 +160,7 @@ module.exports = class PlayHeroesModal extends ModalView
     @visibleHero = hero
     @rerenderFooter()
     @trigger 'hero-loaded', {hero: hero}
+    @updateViewVisibleTimer()
 
   getFullHero: (original) ->
     url = "/db/thang.type/#{original}/version"
@@ -351,6 +373,14 @@ module.exports = class PlayHeroesModal extends ModalView
   onHidden: ->
     super()
     @playSound 'game-menu-close'
+    
+  willDisappear: ->
+    @viewVisibleTimer?.stopTimer({ clearName: true })
+    super()
+
+  didReappear: ->
+    @updateViewVisibleTimer()
+    super()
 
   destroy: ->
     clearInterval @heroAnimationInterval
