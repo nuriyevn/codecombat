@@ -3,7 +3,7 @@ SuperModel = require 'models/SuperModel'
 utils = require 'core/utils'
 CocoClass = require 'core/CocoClass'
 
-debugAnalytics = false
+debugAnalytics = true
 targetInspectJSLevelSlugs = ['cupboards-of-kithgard']
 
 module.exports = class Tracker extends CocoClass
