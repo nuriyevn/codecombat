@@ -160,7 +160,7 @@ module.exports = class PlayItemsModal extends ModalView
 
   # Track premium feature viewing time
   updateViewVisibleTimer: ->
-    @viewVisibleTimer.stopTimer()
+    @viewVisibleTimer.stopTimer({ clearName: true })
     if 'pet' in (@itemDetailsView?.item?.getAllowedSlots() or [])
       @viewVisibleTimer.startTimer(@.id + " view-pet")
     else if @$el.find('.tab-content').hasClass('filter-wizard')
