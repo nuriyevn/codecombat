@@ -67,7 +67,12 @@ module.exports = class PlayHeroesModal extends ModalView
   currentVisiblePremiumFeature: ->
     isPremium = not (@visibleHero.class is 'warrior' and @visibleHero.get('tier') is 0)
     if isPremium
-      return @.id + " premium-hero #{@visibleHero.get('slug')}"
+      return {
+        viewName: @.id
+        featureName: 'view-hero'
+        premiumThang:
+          slug: @visibleHero.get('slug')
+      }
     else
       return null
 

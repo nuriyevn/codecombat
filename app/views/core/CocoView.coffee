@@ -90,14 +90,14 @@ module.exports = class CocoView extends Backbone.View
   # Views with more involved features should implement this method instead.
   currentVisiblePremiumFeature: ->
     if @trackViewLifecycle
-      return @.id
+      return { viewName: @.id }
     else
       return null
   
   updateViewVisibleTimer: ->
     return if not @viewVisibleTimer
     visibleFeature = not @hidden and not @destroyed and @currentVisiblePremiumFeature()
-    if visibleFeature and visibleFeature isnt @viewVisibleTimer.featureName
+    if visibleFeature and not _.isEqual(visibleFeature, @viewVisibleTimer.featureData)
       @viewVisibleTimer.stopTimer({ clearName: true })
       @viewVisibleTimer.startTimer(visibleFeature)
     else if not visibleFeature

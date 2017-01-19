@@ -31,8 +31,9 @@ class ViewVisibleTimer extends CocoClass
     @throttleRate = 50
     super()
 
-  startTimer: (@featureName) ->
-    if not @featureName
+  startTimer: (@featureData) ->
+    { viewName, featureName, premiumThang } = @featureData
+    if not viewName
       throw new Error('No view name!')
     if @running and window.performance.now() - @startTime > @throttleRate
       throw(new Error('Starting a timer over another one!'))
@@ -47,8 +48,8 @@ class ViewVisibleTimer extends CocoClass
       @endTime = if subtractTimeout then @lastActive else window.performance.now()
       timeViewed = @endTime - @startTime
       if timeViewed > @throttleRate # Prevent event spam when triggered in rapid succession
-        window.tracker.trackEvent 'Premium Feature Viewed', { @featureName, timeViewed }
-    @featureName = null if clearName
+        window.tracker.trackEvent 'Premium Feature Viewed', { @featureData, timeViewed }
+    @featureData = null if clearName
     
   markLastActive: ->
     @lastActive = window.performance.now()
@@ -63,13 +64,13 @@ class ViewVisibleTimer extends CocoClass
     
   onAwayBack: ->
     clearTimeout(@awayTimeoutId)
-    @startTimer(@featureName) if not @running and @featureName
+    @startTimer(@featureData) if not @running and @featureData
     
   onHidden: ->
     @stopTimer({ subtractTimeout: false })
     
   onVisible: ->
-    @startTimer(@featureName) if @featureName
+    @startTimer(@featureData) if @featureData
     
   destroy: ->
     @stopTimer()

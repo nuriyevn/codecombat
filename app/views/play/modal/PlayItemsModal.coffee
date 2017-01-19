@@ -160,16 +160,19 @@ module.exports = class PlayItemsModal extends ModalView
 
   currentVisiblePremiumFeature: ->
     item = @itemDetailsView?.item
-    if 'pet' in (item?.getAllowedSlots() or [])
-      return @.id + " view-pet " + item.get('slug')
-    else if item?.get('heroClass') is 'Ranger'
-      return @.id + " item-ranger " + item.get('slug')
-    else if item?.get('heroClass') is 'Wizard'
-      return @.id + " item-wizard " + item.get('slug')
+    if 'pet' in (item?.getAllowedSlots() or []) or item?.get('heroClass') in ['Ranger', 'Wizard']
+      return {
+        viewName: @.id
+        featureName: 'view-item'
+        premiumThang:
+          slug: item.get('slug')
+          heroClass: item.get('heroClass')
+          slots: item.getAllowedSlots()
+      }
     else if @$el.find('.tab-content').hasClass('filter-wizard')
-      return @.id + " filter-wizard"
+      return { viewName: @.id, featureName: 'filter-wizard' }
     else if @$el.find('.tab-content').hasClass('filter-ranger')
-      return @.id + " filter-ranger"
+      return { viewName: @.id, featureName: 'filter-ranger' }
     else
       return null
   
