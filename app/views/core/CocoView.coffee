@@ -4,6 +4,7 @@ CocoClass = require 'core/CocoClass'
 loadingScreenTemplate = require 'templates/core/loading'
 loadingErrorTemplate = require 'templates/core/loading-error'
 auth = require 'core/auth'
+ViewVisibleTimer = require 'core/ViewVisibleTimer'
 
 lastToggleModalCall = 0
 visibleModal = null
@@ -64,6 +65,7 @@ module.exports = class CocoView extends Backbone.View
     super arguments...
 
   destroy: ->
+    @viewVisibleTimer?.destroy()
     @stopListening()
     @off()
     @stopListeningToShortcuts()
@@ -79,6 +81,11 @@ module.exports = class CocoView extends Backbone.View
     @destroy = doNothing
     $.noty.closeAll()
 
+  trackTimeVisible: ({ trackViewLifecycle } = {}) ->
+    return if @viewVisibleTimer
+    @viewVisibleTimer = new ViewVisibleTimer()
+    @trackViewLifecycle = trackViewLifecycle
+
   destroyAceEditor: (editor) ->
     # convenience method to make sure the ace editor is as destroyed as can be
     return unless editor
@@ -87,9 +94,13 @@ module.exports = class CocoView extends Backbone.View
     editor.destroy()
 
   afterInsert: ->
+    if @trackViewLifecycle
+      @viewVisibleTimer?.startTimer(@.id)
 
   willDisappear: ->
     # the router removes this view but this view will be cached
+    if @trackViewLifecycle
+      @viewVisibleTimer?.stopTimer()
     @undelegateEvents()
     @hidden = true
     @stopListeningToShortcuts()
@@ -98,6 +109,8 @@ module.exports = class CocoView extends Backbone.View
 
   didReappear: ->
     # the router brings back this view from the cache
+    if @trackViewLifecycle
+      @viewVisibleTimer?.startTimer(@.id)
     @delegateEvents()
     wasHidden = @hidden
     @hidden = false
@@ -236,14 +249,14 @@ module.exports = class CocoView extends Backbone.View
       return visibleModal.hide() if visibleModal.$el.is(':visible') # close, then this will get called again
       return @modalClosed(visibleModal) # was closed, but modalClosed was not called somehow
     modalView.render()
-    
+
     # Redirect to the woo when trying to log in or signup
     if features.codePlay
       if modalView.id is 'create-account-modal'
         return document.location.href = '//lenovogamestate.com/register/?cocoId='+me.id
       if modalView.id is 'auth-modal'
         return document.location.href = '//lenovogamestate.com/login/?cocoId='+me.id
-        
+
     $('#modal-wrapper').removeClass('hide').empty().append modalView.el
     modalView.afterInsert()
     visibleModal = modalView

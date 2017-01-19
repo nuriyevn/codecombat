@@ -83,6 +83,7 @@ module.exports = class PlayItemsModal extends ModalView
     @stopListening @supermodel, 'loaded-all'
     @supermodel.loadCollection(itemFetcher, 'items')
     @idToItem = {}
+    @trackTimeVisible()
 
   onItemsFetched: (itemFetcher) ->
     gemsOwned = me.gems()
@@ -155,6 +156,17 @@ module.exports = class PlayItemsModal extends ModalView
       else
         itemEl.addClass('selected') unless wasSelected
     @itemDetailsView.setItem(item)
+    @updateViewVisibleTimer()
+
+  # Track premium feature viewing time
+  updateViewVisibleTimer: ->
+    @viewVisibleTimer.stopTimer()
+    if 'pet' in (@itemDetailsView?.item?.getAllowedSlots() or [])
+      @viewVisibleTimer.startTimer(@.id + " view-pet")
+    else if @$el.find('.tab-content').hasClass('filter-wizard')
+      @viewVisibleTimer.startTimer(@.id + " filter-wizard")
+    else if @$el.find('.tab-content').hasClass('filter-ranger')
+      @viewVisibleTimer.startTimer(@.id + " filter-ranger")
 
   onTabClicked: (e) ->
     @playSound 'game-menu-tab-switch'
@@ -180,6 +192,7 @@ module.exports = class PlayItemsModal extends ModalView
     tabContent = @$el.find('.tab-content')
     tabContent.removeClass('filter-wizard filter-ranger filter-warrior')
     tabContent.addClass("filter-#{value}") if value isnt 'all'
+    @updateViewVisibleTimer()
 
   onUnlockButtonClicked: (e) ->
     e.stopPropagation()
