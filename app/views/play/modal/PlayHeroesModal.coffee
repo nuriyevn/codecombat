@@ -69,16 +69,7 @@ module.exports = class PlayHeroesModal extends ModalView
     if isPremium
       return @.id + " premium-hero #{@visibleHero.get('slug')}"
     else
-      return undefined
-    
-  updateViewVisibleTimer: ->
-    feature = @currentVisiblePremiumFeature()
-    if feature and feature isnt @viewVisibleTimer.viewName
-      @viewVisibleTimer.stopTimer({ clearName: true })
-      console.log "Starting timer"
-      @viewVisibleTimer.startTimer(feature)
-    else if not feature
-      @viewVisibleTimer.stopTimer({ clearName: true })
+      return null
 
   getRenderData: (context={}) ->
     context = super(context)
@@ -373,14 +364,6 @@ module.exports = class PlayHeroesModal extends ModalView
   onHidden: ->
     super()
     @playSound 'game-menu-close'
-    
-  willDisappear: ->
-    @viewVisibleTimer?.stopTimer({ clearName: true })
-    super()
-
-  didReappear: ->
-    @updateViewVisibleTimer()
-    super()
 
   destroy: ->
     clearInterval @heroAnimationInterval

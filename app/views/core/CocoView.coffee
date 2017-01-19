@@ -85,6 +85,23 @@ module.exports = class CocoView extends Backbone.View
     return if @viewVisibleTimer
     @viewVisibleTimer = new ViewVisibleTimer()
     @trackViewLifecycle = trackViewLifecycle
+    
+  # Report the curently visible feature — this is the default handler for whole-view tracking
+  # Views with more involved features should implement this method instead.
+  currentVisiblePremiumFeature: ->
+    if @trackViewLifecycle
+      return @.id
+    else
+      return null
+  
+  updateViewVisibleTimer: ->
+    return if not @viewVisibleTimer
+    visibleFeature = @currentVisiblePremiumFeature() and not @hidden and not @destroyed
+    if visibleFeature and visibleFeature isnt @viewVisibleTimer.featureName
+      @viewVisibleTimer.stopTimer({ clearName: true })
+      @viewVisibleTimer.startTimer(visibleFeature)
+    else if not visibleFeature
+      @viewVisibleTimer.stopTimer({ clearName: true })
 
   destroyAceEditor: (editor) ->
     # convenience method to make sure the ace editor is as destroyed as can be
@@ -94,26 +111,23 @@ module.exports = class CocoView extends Backbone.View
     editor.destroy()
 
   afterInsert: ->
-    if @trackViewLifecycle
-      @viewVisibleTimer?.startTimer(@.id)
+    @updateViewVisibleTimer()
 
   willDisappear: ->
     # the router removes this view but this view will be cached
-    if @trackViewLifecycle
-      @viewVisibleTimer?.stopTimer()
     @undelegateEvents()
     @hidden = true
+    @updateViewVisibleTimer()
     @stopListeningToShortcuts()
     view.willDisappear() for id, view of @subviews
     $.noty.closeAll()
 
   didReappear: ->
     # the router brings back this view from the cache
-    if @trackViewLifecycle
-      @viewVisibleTimer?.startTimer(@.id)
     @delegateEvents()
     wasHidden = @hidden
     @hidden = false
+    @updateViewVisibleTimer()
     @listenToShortcuts() if wasHidden
     view.didReappear() for id, view of @subviews
 
